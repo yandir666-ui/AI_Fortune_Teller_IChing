@@ -27,7 +27,7 @@ pip install -r requirements.txt
 ```bash
 # 访问 https://ollama.ai 下载安装
 # 启动Ollama服务后，下载qwen模型
-ollama pull qwen3:4b
+ollama run FortuneQwen3_q8:4b
 ```
 
 ## 项目结构
@@ -71,7 +71,7 @@ from main import IChing
 # 初始化
 iching = IChing(
     ollama_url="http://localhost:11434",
-    model="qwen3:4b",
+    model="FortuneQwen3_q8:4b",
     verbose=True
 )
 
@@ -106,7 +106,7 @@ print(result)
 ## 注意事项
 
 - 请确保Ollama服务正常运行
-- 首次使用需下载qwen3:4b模型（约2-4GB）
+- 首次使用需下载/创建 FortuneQwen3_q8:4b 模型（约2-4GB）
 - 可根据需要调整AI模型和参数
 
 ## 更新日志

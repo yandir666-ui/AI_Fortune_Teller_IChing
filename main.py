@@ -49,7 +49,7 @@ class IChing:
     """周易占卜系统"""
     
     def __init__(self, ollama_url="http://localhost:11434", 
-                 model="qwen3:4b",
+                 model="FortuneQwen3_q8:4b",
                  data_path="hexagrams_data.json",
                  verbose=True,
                  concise=False):
@@ -71,7 +71,7 @@ class IChing:
     
     def divine(self, question="", stream=False):
         """
-        执行完整的占卜流程
+        执行完整的占卜流程 (异步优化版)
         
         Args:
             question: 占卜问题
@@ -81,31 +81,27 @@ class IChing:
             str: AI解卦结果 (非流式)
             Generator: 生成器 (流式)
         """
+        import threading
+        import queue
+
         # 1. 检查Ollama连接
         if not self.ollama.check_connection():
             return "错误: 无法连接到Ollama服务，请确保Ollama正在运行。"
         
-        # 2. 起卦
-        if self.verbose:
-            print("\n" + "="*60)
-            print("开始起卦...")
-            print("="*60)
-        
-        divination_result = self.divination.run()
-        
+        # 2. 立即计算卦象结果 (不含显示)
+        #    利用 refactor 后的 simulate 方法瞬间得到结果
+        simulation_data = self.divination.simulate()
+        divination_result = simulation_data["hex_result"]
+
         # 3. 解析卦象
         interpretation = self.interpreter.interpret_divination_result(divination_result)
         
-        # 4. 构建卦象信息摘要
+        # 4. 构建卦象信息与 Prompt
         original_hex = interpretation['original_hexagram']
         changed_hex = interpretation['changed_hexagram']
         
-        # 错误处理：如果卦象未找到
         if original_hex is None:
-            error_msg = f"错误: 无法找到卦象数据。二进制: {divination_result['original_binary']}"
-            if self.verbose:
-                print(error_msg)
-            return error_msg
+            return f"错误: 无法找到卦象数据。二进制: {divination_result['original_binary']}"
         
         hexagram_info = f"本卦: {original_hex.get('name_cn', '未知')}卦 (第{original_hex.get('number', '?')}卦)"
         if changed_hex:
@@ -113,34 +109,65 @@ class IChing:
         if interpretation['changing_lines']:
             hexagram_info += f"\n变爻: 第{interpretation['changing_lines']}爻"
         
-        # 5. 构建Prompt
         user_prompt, system_prompt = PromptTemplates.build_divination_prompt(
             question=question,
             hexagram_info=hexagram_info,
             interpretation_guide=interpretation['interpretation_guide'],
             original_text=interpretation['original_text'],
             changed_text=interpretation['changed_text'],
-            concise=self.concise  # 使用实例的concise设置
+            concise=self.concise
         )
+
+        # 5. 启动后台线程请求 AI
+        #    使用 Queue 来传递 AI 的响应结果
+        ai_response_queue = queue.Queue()
         
-        # 6. 调用AI生成解卦
+        def ai_worker():
+            try:
+                # 获取完整响应（即使前端要求流式，我们也先在后台获取生成器或完整文本）
+                # 这里为了配合前端流式体验，如果是 stream=True，我们将生成器放入 queue
+                # 如果是 stream=False，我们将完整字符串放入 queue
+                res = self.ollama.generate(
+                    prompt=user_prompt,
+                    system_prompt=system_prompt,
+                    temperature=0.7,
+                    stream=stream
+                )
+                ai_response_queue.put(res)
+            except Exception as e:
+                ai_response_queue.put(e)
+
+        ai_thread = threading.Thread(target=ai_worker)
+        ai_thread.start()
+
+        # 6. 当 AI 在后台思考时，前台播放大衍筮法动画
         if self.verbose:
+            print("\n" + "="*60)
+            print("开始起卦...")
+            print("="*60)
+            
+            # 播放动画 (耗时过程)
+            self.divination.play_process(simulation_data)
+            
             print("\n" + "="*60)
             print("正在请AI大师解卦...")
             print("="*60 + "\n")
+
+        # 7. 等待 AI 线程完成 (通常动画播放完，AI也差不多好了)
+        ai_thread.join()
         
-        response = self.ollama.generate(
-            prompt=user_prompt,
-            system_prompt=system_prompt,
-            temperature=0.7,
-            stream=stream
-        )
+        # 获取结果
+        response = ai_response_queue.get()
         
+        if isinstance(response, Exception):
+            return f"错误: AI生成失败 - {str(response)}"
+
+        # 8. 处理并返回输出
         if stream:
             # 流式输出
             def stream_wrapper():
+                # response 是一个 generator
                 for chunk in response:
-                    # 清除Markdown格式
                     cleaned_chunk = clean_markdown(chunk)
                     if self.verbose:
                         print(cleaned_chunk, end='', flush=True)
@@ -150,7 +177,6 @@ class IChing:
             return stream_wrapper()
         else:
             # 一次性输出
-            # 清除Markdown格式
             cleaned_response = clean_markdown(response)
             if self.verbose:
                 print(cleaned_response)
@@ -189,7 +215,7 @@ def main():
     # 初始化系统（使用精简模式）
     iching = IChing(
         ollama_url="http://localhost:11434",
-        model="qwen3:4b",
+        model="FortuneQwen3_q8:4b",
         verbose=True,
         concise=True  # 默认使用精简模式，可改为False使用详细模式
     )
@@ -200,7 +226,7 @@ def main():
         print("请确保:")
         print("  1. Ollama已安装并运行")
         print("  2. 服务地址正确 (默认: http://localhost:11434)")
-        print("  3. 已下载qwen模型 (ollama pull qwen)")
+        print("  3. 已下载模型 (如: ollama run FortuneQwen3_q8:4b)")
         return
     
     print(f"✓ 已连接到Ollama服务")

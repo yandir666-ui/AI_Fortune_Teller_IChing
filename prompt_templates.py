@@ -10,54 +10,12 @@ Prompt Templates
 class PromptTemplates:
     """Prompt模板集合"""
     
-    # 详细模式系统提示词
-    SYSTEM_PROMPT = """你是一位精通中国传统周易文化的资深易学大师，拥有深厚的易经理论基础和丰富的占卜解卦经验。
-
-你的职责是：
-1. 基于提供的卦象信息（卦辞、爻辞、彖传、象传等古文原文）进行解读
-2. 结合问卜者的具体问题，给出准确、深刻且富有启发性的解释
-3. 用现代语言阐释古文含义，让普通人也能理解
-4. 既要尊重传统文献，又要联系现实生活
-
-注意事项：
-- 不要编造或臆测卦辞内容，严格基于提供的文本
-- 合理运用象数思维和阴阳五行理论
-"""
-    
-    # 精简模式系统提示词
+    # 精简模式系统提示词 (与微调模型一致)
     SYSTEM_PROMPT_CONCISE = """你是一位精通周易的算命先生，擅长给人占卜吉凶。
-
 要求：
 1. 基于卦象给出明确的结论
 2. 用老百姓听得懂的话说，不要文绉绉的
-3. 必须引用周易原文来支撑你的判断
-"""
-    
-    # 详细模式占卜模板
-    DIVINATION_TEMPLATE = """【占卜问题】
-{question}
-
-【起卦结果】
-{hexagram_info}
-
-【解卦指引】
-{interpretation_guide}
-
-【周易原文】
-{hexagram_texts}
-
----
-
-请你作为易学大师，基于以上卦象和周易原文，为问卜者详细解答其问题。你的解答应该包括：
-
-1. **卦象总述**：简要说明得到的是什么卦，这个卦的基本含义
-2. **卦辞解读**：解释卦辞和相关爻辞的深层含义
-3. **针对问题的分析**：结合问卜者的具体问题进行分析
-4. **吉凶判断**：根据卦象给出吉凶趋势的判断
-5. **行动建议**：提供具体的、可操作的建议
-
-请用典雅而易懂的语言，给出一个完整、深入的解答。
-"""
+3. 必须引用周易原文来支撑你的判断"""
     
     # 精简模式占卜模板
     DIVINATION_TEMPLATE_CONCISE = """【占卜问题】
@@ -89,10 +47,10 @@ class PromptTemplates:
         Args:
             question: 问卜问题
             hexagram_info: 卦象基本信息
-            interpretation_guide: 解卦指引
+            interpretation_guide: 解卦指引 (不再使用)
             original_text: 本卦文本
             changed_text: 之卦文本（可选）
-            concise: 是否使用精简模式（默认False）
+            concise: 是否使用精简模式 (保留参数以兼容，但实际只支持精简模式)
             
         Returns:
             tuple: (user_prompt, system_prompt)
@@ -102,18 +60,13 @@ class PromptTemplates:
         if changed_text:
             hexagram_texts += f"\n\n{'='*50}\n【之卦】\n{changed_text}"
         
-        # 选择模板和系统提示词
-        if concise:
-            template = PromptTemplates.DIVINATION_TEMPLATE_CONCISE
-            system_prompt = PromptTemplates.SYSTEM_PROMPT_CONCISE
-        else:
-            template = PromptTemplates.DIVINATION_TEMPLATE
-            system_prompt = PromptTemplates.SYSTEM_PROMPT
+        # 强制使用精简模板和系统提示词
+        template = PromptTemplates.DIVINATION_TEMPLATE_CONCISE
+        system_prompt = PromptTemplates.SYSTEM_PROMPT_CONCISE
         
         prompt = template.format(
             question=question if question else "无具体问题，请通占",
             hexagram_info=hexagram_info,
-            interpretation_guide=interpretation_guide if not concise else "",
             hexagram_texts=hexagram_texts
         )
         

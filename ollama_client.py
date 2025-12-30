@@ -14,7 +14,7 @@ from typing import Optional, Generator
 class OllamaClient:
     """Ollama API客户端"""
     
-    def __init__(self, base_url="http://localhost:11434", model="qwen3:4b"):
+    def __init__(self, base_url="http://localhost:11434", model="FortuneQwen3_q8:4b"):
         """
         初始化Ollama客户端
         
@@ -113,7 +113,7 @@ class OllamaClient:
 
 if __name__ == "__main__":
     # 测试代码
-    client = OllamaClient(model="qwen3:4b")
+    client = OllamaClient(model="FortuneQwen3_q8:4b")
     
     # 检查连接
     if client.check_connection():

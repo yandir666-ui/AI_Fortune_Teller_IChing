@@ -56,141 +56,180 @@ class DayanDivination:
         right = total - left
         return left, right
 
-    def physical_count(self, pile_name, count):
-        """
-        【揲四】模拟：每四根一数，不使用取模运算，而是真实的物理减法
-        """
-        if self.verbose:
-            sys.stdout.write(f"      [{pile_name}手] 揲四计数: ")
-            sys.stdout.flush()
+    def _calculate_physical_count(self, count):
+        """内部计算揲四结果"""
+        remainder = count % 4
+        if remainder == 0:
+            remainder = 4
+        return remainder
+
+    def _display_physical_count(self, pile_name, count):
+        """显示揲四过程"""
+        if not self.verbose:
+            return 4 if count % 4 == 0 else count % 4
+
+        sys.stdout.write(f"      [{pile_name}手] 揲四计数: ")
+        sys.stdout.flush()
         
         current = count
         # 视觉特效：每减一次显示一个点
         while current > 4:
             current -= 4
-            if self.verbose:
-                sys.stdout.write(".")  # 每一个点代表数走了4根
-                sys.stdout.flush()
-                time.sleep(0.02)  # 数数的速度
+            sys.stdout.write(".")  # 每一个点代表数走了4根
+            sys.stdout.flush()
+            time.sleep(0.02)  # 数数的速度
             
-        # 易经规则：若整除（剩0），则取4根为余数
         remainder = 4 if current == 0 else current
-        
-        if self.verbose:
-            print(f" 剩 {remainder} 策")
+        print(f" 剩 {remainder} 策")
         return remainder
 
-    def process_change(self, line_idx, change_idx, current_total):
+    def _calculate_change(self, current_total):
         """
-        执行【一变】的完整物理流程
+        计算【一变】的数据
         """
-        if self.verbose:
-            print(f"    < 第 {line_idx} 爻 - 第 {change_idx} 变 >")
-        
         # 1. 分二
         left, right = self.human_split(current_total)
-        if self.verbose:
-            print(f"      [分二]  左手: {left}  |  右手: {right}  (总: {current_total})")
-            self.wait(0.3)
         
         # 2. 挂一
-        right -= 1
+        right_hang = right - 1
         hang_one = 1
-        if self.verbose:
-            print(f"      [挂一]  取右一策，挂于左手小指")
         
-        # 3. 揲四 (左)
-        left_rem = self.physical_count("左", left)
-        
-        # 4. 揲四 (右)
-        right_rem = self.physical_count("右", right)
+        # 3. 揲四
+        left_rem = self._calculate_physical_count(left)
+        right_rem = self._calculate_physical_count(right_hang)
         
         # 5. 归奇
         removed = hang_one + left_rem + right_rem
         new_total = current_total - removed
         
-        if self.verbose:
-            print(f"      [归奇]  挂1 + 左余{left_rem} + 右余{right_rem} = 去掉 {removed} 策")
-            print(f"      [结余]  当前剩余: {new_total} 策")
-            print("-" * 60)
-            self.wait(0.5)
-        
-        return new_total
+        return {
+            "left": left,
+            "right": right,
+            "left_rem": left_rem,
+            "right_rem": right_rem,
+            "removed": removed,
+            "new_total": new_total
+        }
 
-    def generate_line(self, line_idx):
+    def _calculate_line(self):
+        """计算【一爻】的三变数据"""
+        current_stalks = 49
+        changes = []
+        
+        for _ in range(3):
+            change_data = self._calculate_change(current_stalks)
+            changes.append(change_data)
+            current_stalks = change_data['new_total']
+            
+        # 三变之后，定爻
+        final_num = current_stalks // 4
+        return final_num, changes
+
+    def simulate(self):
         """
-        生成【一爻】的过程 (三变成一爻)
+        立即执行完整演算，不显示过程
         
         Returns:
-            int: 6(老阴), 7(少阳), 8(少阴), 9(老阳)
+            dict: 包含所有步骤数据的字典，用于后续回放
         """
-        pos_names = ["初", "二", "三", "四", "五", "上"]
+        line_data = []
+        final_lines = []
         
-        if self.verbose:
+        for i in range(1, 7):
+            val, changes = self._calculate_line()
+            final_lines.append(val)
+            line_data.append({
+                "line_idx": i,
+                "value": val,
+                "changes": changes
+            })
+            
+        self.lines = final_lines
+        hex_result = self.get_hexagram_result()
+        
+        return {
+            "hex_result": hex_result,
+            "process_log": line_data
+        }
+
+    def play_process(self, simulation_data):
+        """
+        根据模拟数据回放这一过程
+        """
+        if not self.verbose:
+            return
+
+        print("\n" + "="*60)
+        print("          大 衍 筮 法 · 全 过 程 模 拟")
+        print("="*60)
+        self.type_print("大衍之数五十，其用四十有九。")
+        self.type_print("分而为二以象两，挂一以象三，")
+        self.type_print("揲之以四以象四时，归奇于扐以象润。")
+        print("="*60)
+        self.wait(1)
+
+        pos_names = ["初", "二", "三", "四", "五", "上"]
+        process_log = simulation_data["process_log"]
+
+        for line_step in process_log:
+            line_idx = line_step["line_idx"]
+            val = line_step["value"]
+            changes = line_step["changes"]
+            
             print("\n" + "#" * 60)
             print(f"###  正在演算：{pos_names[line_idx-1]}爻  ###")
             print("#" * 60)
-        
-        # 初始用策：49根
-        current_stalks = 49
-        
-        # 必须经过三变
-        # 第一变
-        current_stalks = self.process_change(line_idx, 1, current_stalks)
-        # 第二变
-        current_stalks = self.process_change(line_idx, 2, current_stalks)
-        # 第三变
-        current_stalks = self.process_change(line_idx, 3, current_stalks)
-        
-        # 三变之后，定爻
-        final_num = current_stalks // 4
-        
-        # 记录结果
-        result_text = ""
-        if final_num == 6: result_text = "老阴 (六) -> 变"
-        elif final_num == 7: result_text = "少阳 (七) -> 不变"
-        elif final_num == 8: result_text = "少阴 (八) -> 不变"
-        elif final_num == 9: result_text = "老阳 (九) -> 变"
-        
-        if self.verbose:
-            print(f"  >>> {pos_names[line_idx-1]}爻 结果判定: 剩 {current_stalks} 策 ÷ 4 = {final_num}")
+            
+            current_total = 49 # 每次都从49开始描述吗？不对，是每一爻开始都是49
+            
+            for change_idx, change in enumerate(changes, 1):
+                print(f"    < 第 {line_idx} 爻 - 第 {change_idx} 变 >")
+                
+                # 回放：分二
+                print(f"      [分二]  左手: {change['left']}  |  右手: {change['right']}  (总: {current_total})")
+                self.wait(0.3)
+                
+                # 回放：挂一
+                print(f"      [挂一]  取右一策，挂于左手小指")
+                
+                # 回放：揲四 (这里需要模拟视觉效果)
+                self._display_physical_count("左", change['left'])
+                
+                # 右手实际上是减了1之后再去揲四的
+                self._display_physical_count("右", change['right'] - 1)
+                
+                # 回放：归奇
+                print(f"      [归奇]  挂1 + 左余{change['left_rem']} + 右余{change['right_rem']} = 去掉 {change['removed']} 策")
+                print(f"      [结余]  当前剩余: {change['new_total']} 策")
+                print("-" * 60)
+                self.wait(0.5)
+                
+                current_total = change['new_total']
+
+            # 显示该爻结果
+            result_text = ""
+            if val == 6: result_text = "老阴 (六) -> 变"
+            elif val == 7: result_text = "少阳 (七) -> 不变"
+            elif val == 8: result_text = "少阴 (八) -> 不变"
+            elif val == 9: result_text = "老阳 (九) -> 变"
+            
+            print(f"  >>> {pos_names[line_idx-1]}爻 结果判定: 剩 {current_total} 策 ÷ 4 = {val}")
             print(f"  >>> 获得: {result_text}")
             self.wait(1.5)
-        
-        return final_num
+
+        # 显示最终卦象
+        self.display_hexagram()
 
     def run(self):
         """
-        主程序 - 执行完整的大衍筮法起卦
-        
-        Returns:
-            dict: 包含本卦、之卦、变爻信息的字典
+        主程序 - 向后兼容
         """
-        if self.verbose:
-            print("\n" + "="*60)
-            print("          大 衍 筮 法 · 全 过 程 模 拟")
-            print("="*60)
-            self.type_print("大衍之数五十，其用四十有九。")
-            self.type_print("分而为二以象两，挂一以象三，")
-            self.type_print("揲之以四以象四时，归奇于扐以象润。")
-            print("="*60)
-            self.wait(1)
-        
-        self.lines = []
-        
-        # 1. 循环生成六爻 (从初爻到上爻)
-        for i in range(1, 7):
-            line_val = self.generate_line(i)
-            self.lines.append(line_val)
-        
-        # 2. 生成卦象
-        result = self.get_hexagram_result()
-        
-        # 3. 显示卦象
-        if self.verbose:
-            self.display_hexagram()
-        
-        return result
+        # 1. 模拟 calculations
+        data = self.simulate()
+        # 2. 播放 visualization
+        self.play_process(data)
+        # 3. 返回结果
+        return data["hex_result"]
 
     def get_hexagram_result(self):
         """

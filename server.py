@@ -27,7 +27,7 @@ class DivinationRequest(BaseModel):
 # 初始化占卜系统 (确保 Ollama 已运行)
 iching_system = IChing(
     ollama_url="http://localhost:11434",
-    model="qwen3:4b",
+    model="FortuneQwen3_q8:4b",
     verbose=True,  # 必须开启 verbose 才能看到起卦过程
     concise=True
 )
