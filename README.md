@@ -23,10 +23,24 @@
 pip install -r requirements.txt
 ```
 
-2. 安装并启动Ollama：
+2. 模型准备 (Model Setup)：
+
+该模型已托管在 Hugging Face，需手动下载并导入 Ollama。
+
 ```bash
-# 访问 https://ollama.ai 下载安装
-# 启动Ollama服务后，下载qwen模型
+# 1. 确保已安装 git lfs
+git lfs install
+
+# 2. 克隆模型仓库 (包含 Modelfile 和 GGUF 权重)
+git clone https://huggingface.co/Tbata7/FortuneQwen3_4b
+
+# 3. 进入目录
+cd FortuneQwen3_4b
+
+# 4. 创建 Ollama 模型
+ollama create FortuneQwen3_q8:4b -f Modelfile
+
+# 5. 验证模型是否可用
 ollama run FortuneQwen3_q8:4b
 ```
 
