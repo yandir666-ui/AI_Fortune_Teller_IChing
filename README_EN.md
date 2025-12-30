@@ -98,6 +98,8 @@ print(result)
 ### Algorithm Randomness
 The `Figure_1.png` file in the project illustrates the numerical distribution of the "Split into Two" step during the casting process. The system uses a normal distribution to simulate the randomness of manual stalk splitting, ensuring the process aligns with traditional logic with natural fluctuations rather than simple uniform randomness.
 
+![Algorithm Randomness Distribution Chart](./Figure_1.png)
+
 ### Data Integrity
 - Complete 64 Hexagram Data: Includes judgments, Tuan, Xiang, and line texts for every hexagram.
 - Intelligent Interpretation: Automatically selects interpretation strategies based on the number of changing lines.
