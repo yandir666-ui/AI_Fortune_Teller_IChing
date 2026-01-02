@@ -8,6 +8,14 @@
 
 基于传统大衍筮法和Ollama AI的智能周易占卜系统。
 
+## 🌐 在线版本 (Online Version)
+
+我们现在推出了基于 Web 的在线版本，支持通过浏览器直接体验：
+
+- **访问地址**: [**https://askthestalks.com**](https://askthestalks.com)
+- **技术说明**: 在线版后端采用 FastAPI 架构，AI 解卦部分调用了 **DeepSeek-V3 API**。
+
+
 ## 功能特点
 
 - 模拟传统大衍筮法起卦过程
@@ -113,7 +121,13 @@ print(result)
 
 ## 更新日志
 
-### v1.1 (当前版本)
+### v1.2 (2026-01-01)
+- **上线在线版本**: [askthestalks.com](https://askthestalks.com)
+- 后端迁移至 FastAPI，支持高并发。
+- AI 模型升级至 **DeepSeek-V3**。
+- 增加 SSE 流式输出支持。
+
+### v1.1
 - 新增微调后的模型支持
 - 增加了异步算法，优化解卦等待体验
 

@@ -8,6 +8,14 @@
 
 An intelligent I-Ching divination system based on traditional Dayan stalks method and Ollama AI.
 
+## 🌐 Online Version
+
+We have launched a Web-based online version accessible via any browser:
+
+- **URL**: [**https://askthestalks.com**](https://askthestalks.com)
+- **Technical Note**: The online version's backend is built on FastAPI, and the AI interpretation is powered by the **DeepSeek-V3 API**.
+
+
 ## Features
 
 - Simulates the traditional Dayan stalks divination process
@@ -112,6 +120,12 @@ The `Figure_1.png` file in the project illustrates the numerical distribution of
 - AI models and parameters can be adjusted as needed.
 
 ## Changelog
+
+### v1.2 (2026-01-01)
+- **Launched Online Version**: [askthestalks.com](https://askthestalks.com)
+- Backend migrated to FastAPI for high concurrency.
+- AI model upgraded to **DeepSeek-V3**.
+- Added SSE streaming output support.
 
 ### v1.1 (Current)
 - Added support for the fine-tuned model.
