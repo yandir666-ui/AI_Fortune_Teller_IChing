@@ -184,10 +184,10 @@ class HexagramInterpreter:
         if image:
             text_parts.append(f"\n{image}")
         
-        # 爻辞（如果指定）
         if include_lines and 'lines' in hexagram_data:
             text_parts.append("\n相关爻辞:")
-            for line_num in include_lines:
+            # 确保按从下往上的顺序排列（1-6）
+            for line_num in sorted(include_lines):
                 line_data = hexagram_data['lines'].get(str(line_num))
                 if line_data:
                     text_parts.append(f"  {line_data.get('text', '')}")
@@ -238,7 +238,7 @@ class HexagramInterpreter:
         elif len(changing_lines) == 2:
             # 二爻动：看本卦两个变爻爻辞，以上爻为主
             original_text = self.format_hexagram_text(original_hex, include_lines=changing_lines)
-            guide = f"二爻动（第{changing_lines}爻）。以本卦二变爻之辞占，上爻为主。"
+            guide = f"二爻动（第{'、'.join(map(str, sorted(changing_lines)))}爻）。以本卦二变爻之辞占，上爻为主。"
             
         elif len(changing_lines) == 3:
             # 三爻动：本卦和之卦卦辞合占

@@ -238,18 +238,25 @@ class DayanDivination:
         Returns:
             dict: {
                 'original_lines': [6,7,8,9,...],  # 原始爻值
-                'original_binary': '101010',       # 本卦二进制
-                'changed_binary': '101011',        # 之卦二进制
-                'changing_lines': [1, 3],          # 变爻位置
+                'original_binary': '101010',       # 本卦二进制 (从上往下：654321)
+                'changed_binary': '101011',        # 之卦二进制 (从上往下：654321)
+                'changing_lines': [1, 3],          # 变爻位置 (1-6)
                 'has_change': True                 # 是否有变爻
             }
         """
         # 计算本卦和之卦的二进制表示
+        # 特别注意：BINARY_TO_NUMBER 表中是以 654321 (从上往下) 的顺序存储的
         original_binary = ""
         changed_binary = ""
         changing_lines = []
         
+        # 1. 记录变爻位置（基于 1-6 顺序）
         for idx, val in enumerate(self.lines):
+            if val == 6 or val == 9:
+                changing_lines.append(idx + 1)
+        
+        # 2. 构建二进制字符串（必须倒序，从第六爻到第一爻）
+        for val in reversed(self.lines):
             # 本卦：7,9为阳(1)，6,8为阴(0)
             if val in [7, 9]:
                 original_binary += "1"
@@ -259,10 +266,8 @@ class DayanDivination:
             # 之卦：老阴(6)变阳，老阳(9)变阴
             if val == 6:  # 老阴变阳
                 changed_binary += "1"
-                changing_lines.append(idx + 1)
             elif val == 9:  # 老阳变阴
                 changed_binary += "0"
-                changing_lines.append(idx + 1)
             elif val == 7:  # 少阳不变
                 changed_binary += "1"
             else:  # val == 8, 少阴不变
